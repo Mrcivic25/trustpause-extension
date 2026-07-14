@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dangerous Download Blocked</title>
+    <link rel="stylesheet" href="interstitial.css">
+    <style>
+        body {
+            background-color: #FEF2F2;
+            color: #1F2937;
+        }
+        .container {
+            border-top: 8px solid #DC2626;
+        }
+        .icon {
+            color: #DC2626;
+        }
+        .filename-box {
+            background-color: #FEE2E2;
+            padding: 16px;
+            border-radius: 8px;
+            margin: 24px 0;
+            font-family: monospace;
+            font-size: 1.1rem;
+            word-break: break-all;
+            border: 1px dashed #FCA5A5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon" id="icon-container">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                <line x1="12" y1="9" x2="12" y2="13"></line>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+        </div>
+        
+        <h1 class="title">Dangerous Download Blocked</h1>
+        
+        <p class="body-text">
+            TrustPause stopped this file from downloading because it is an executable program coming from an unrecognized website (<span id="domain-text" style="font-weight: bold;"></span>).
+        </p>
+        <p class="body-text">
+            Scammers often trick people into downloading programs to take over their computers.
+        </p>
+
+        <div class="filename-box" id="filename-text"></div>
+
+        <div class="actions">
+            <button class="btn btn-primary" id="btn-cancel">Delete File & Go Back</button>
+            <button class="btn btn-secondary" id="btn-keep">I trust this, Keep File</button>
+        </div>
+    </div>
+
+    <script src="download-warning.js"></script>
+</body>
+</html>

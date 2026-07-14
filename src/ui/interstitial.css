@@ -1,0 +1,132 @@
+:root {
+    /* Default SCAM (Red) */
+    --bg-color: #FEE2E2;
+    --text-headline: #7F1D1D;
+    --text-body: #991B1B;
+    --icon-border: #DC2626;
+    --btn-primary-bg: #DC2626;
+    --btn-primary-text: #FFFFFF;
+    --btn-secondary-border: #FCA5A5;
+}
+
+body[data-theme="remote"] {
+    --bg-color: #EAF3FB;
+    --text-headline: #042C53;
+    --text-body: #0C447C;
+    --icon-border: #185FA5;
+    --btn-primary-bg: #185FA5;
+    --btn-primary-text: #FFFFFF;
+    --btn-secondary-border: #85B7EB;
+}
+
+body[data-theme="payment"] {
+    --bg-color: #FAEEDA;
+    --text-headline: #412402;
+    --text-body: #633806;
+    --icon-border: #854F0B;
+    --btn-primary-bg: #854F0B;
+    --btn-primary-text: #FFFFFF;
+    --btn-secondary-border: #FAC775;
+}
+
+body {
+    margin: 0;
+    padding: 48px 40px;
+    background-color: var(--bg-color);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+.container {
+    width: 100%;
+    max-width: 600px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.icon-container {
+    background-color: #FFFFFF;
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    border: 2px solid var(--icon-border);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto 32px;
+}
+
+h1 {
+    font-size: 32px;
+    font-weight: 500;
+    color: var(--text-headline);
+    margin: 0 0 24px 0;
+}
+
+#body-text {
+    font-size: 24px;
+    line-height: 1.6;
+    color: var(--text-body);
+    margin: 0 auto 48px auto;
+    max-width: 480px;
+}
+
+/* Ensure reason text isn't too small if it's appended */
+#reason-text {
+    font-size: 18px;
+    color: var(--text-body);
+    margin-bottom: 24px;
+    font-weight: 600;
+}
+#reason-text:empty {
+    display: none;
+}
+
+.actions {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+    max-width: 420px;
+    margin: 0 auto;
+}
+
+button {
+    font-family: inherit;
+    border-radius: 12px;
+    cursor: pointer;
+    box-shadow: none; /* No shadows */
+}
+
+.btn-primary {
+    background-color: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
+    border: none;
+    height: 64px;
+    font-size: 22px;
+    font-weight: 500;
+    width: 100%;
+}
+
+.btn-secondary {
+    background-color: transparent;
+    color: var(--text-body);
+    border: 1px solid var(--btn-secondary-border);
+    height: 48px;
+    font-size: 16px;
+    width: 100%;
+}
+
+/* Specific to the scam layout which had side-by-side secondary buttons */
+#btn-report {
+    display: none; /* Hidden by default for sensitive themes */
+}
+body[data-theme="scam"] #btn-report {
+    display: block;
+}

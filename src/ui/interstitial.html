@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrustPause</title>
+    <link rel="stylesheet" href="interstitial.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body data-theme="scam">
+    <div class="container">
+        <div class="icon-container" id="icon-container">
+            <!-- Icon injected by JS based on theme -->
+        </div>
+        
+        <h1 id="title-text">Wait a moment</h1>
+        
+        <p id="reason-text"></p>
+        
+        <p id="body-text">
+            This might be a scam website trying to trick you. Your personal information and money could be at risk if you continue. It's safer to go back.
+        </p>
+
+        <button id="btn-read-aloud" style="background: none; border: 1px solid var(--c-primary); color: var(--c-primary); padding: 8px 16px; border-radius: 9999px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; margin-bottom: 24px;">
+            🔊 Read Warning Aloud
+        </button>
+
+        <div id="whitelist-container" style="display: none; margin-bottom: 24px; text-align: left; padding: 12px; background: #f8fafc; border-radius: 8px;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 16px; color: #475569;">
+                <input type="checkbox" id="chk-whitelist" style="width: 20px; height: 20px; cursor: pointer;">
+                Don't ask me again for this site
+            </label>
+        </div>
+
+        <div class="actions">
+            <!-- Safe action first -->
+            <button id="btn-back" class="btn-primary">Go Back (Safe)</button>
+            <button id="btn-continue" class="btn-secondary">Continue anyway</button>
+            <button id="btn-report" class="btn-secondary">Report this site</button>
+        </div>
+    </div>
+    <script src="interstitial.js"></script>
+</body>
+</html>

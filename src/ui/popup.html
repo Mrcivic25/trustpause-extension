@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrustPause</title>
+    <link rel="stylesheet" href="popup.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="header">
+        <div class="logo-container" style="background: none; padding: 0;">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="24" height="24" rx="6" fill="#185FA5"/>
+                <rect x="7" y="6" width="3" height="12" rx="1.5" fill="white"/>
+                <rect x="14" y="6" width="3" height="12" rx="1.5" fill="white"/>
+            </svg>
+        </div>
+        <h2>TrustPause</h2>
+    </div>
+
+    <div class="status-card" id="status-card">
+        <div class="status-indicator" id="status-indicator"></div>
+        <div class="status-details">
+            <span class="status-title" id="status-title">Checking site...</span>
+            <span class="status-domain" id="status-domain">example.com</span>
+        </div>
+    </div>
+
+    <div class="settings-group">
+        <div class="setting-item">
+            <div class="setting-info">
+                <span class="setting-name">Protection Enabled</span>
+                <span class="setting-desc">Actively checking new websites</span>
+            </div>
+            <label class="switch">
+                <input type="checkbox" id="toggle-protection" aria-label="Toggle Protection" checked>
+                <span class="slider round"></span>
+            </label>
+        </div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stat-value" id="threats-blocked">0</div>
+        <div class="stat-label">Threats Blocked</div>
+    </div>
+
+    <div class="actions" style="margin-top: 16px;">
+        <button id="btn-report-page" class="btn-primary" style="margin-bottom: 8px;">Report Current Page</button>
+        <button id="btn-clear-allowlist" class="btn-secondary">Clear Allowlist</button>
+    </div>
+
+    <!-- Phase 3: Pairing UI -->
+    <div class="pairing-section">
+        <hr class="divider">
+        <h3 class="section-title">Family Dashboard</h3>
+        
+        <div id="paired-state" style="display: none;" class="paired-box">
+            <span class="paired-icon">✓</span> Linked to Caretaker
+        </div>
+        
+        <div id="unpaired-state" class="unpaired-box">
+            <p class="pairing-desc">Link to a family member to let them manage alerts.</p>
+            <div class="pairing-input-group" style="display: flex; flex-direction: column; gap: 8px;">
+                <input type="text" id="pairing-code" aria-label="Pairing Code" placeholder="Code (e.g. 123-456)" maxlength="7" style="padding: 8px; border: 1px solid #CBD5E1; border-radius: 6px;">
+                <input type="password" id="pairing-password" aria-label="Pairing Password" placeholder="12-character Password" maxlength="12" style="padding: 8px; border: 1px solid #CBD5E1; border-radius: 6px;">
+                <button id="btn-pair" class="btn-primary">Link to Dashboard</button>
+            </div>
+            <p id="pairing-error" class="error-text" style="display: none;">Invalid Code</p>
+        </div>
+    </div>
+
+    <script type="module" src="popup.js"></script>
+</body>
+</html>

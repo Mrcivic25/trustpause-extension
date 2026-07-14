@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrustPause History</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --c-primary: #1e40af; /* Blue-800 */
+            --c-text: #0f172a; /* Slate-900 */
+            --c-text-muted: #475569; /* Slate-600 */
+            --c-surface: #f8fafc; /* Slate-50 */
+            --c-border: #e2e8f0; /* Slate-200 */
+            --c-warn: #b45309; /* Amber-700 */
+            --c-block: #991b1b; /* Red-800 */
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--c-surface);
+            color: var(--c-text);
+            font-size: 18px; /* Large for readability */
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            margin-bottom: 32px;
+            border-bottom: 2px solid var(--c-border);
+            padding-bottom: 24px;
+        }
+
+        h1 {
+            color: var(--c-primary);
+            font-size: 28px;
+            margin: 0 0 8px 0;
+        }
+
+        .subtitle {
+            color: var(--c-text-muted);
+            margin: 0;
+        }
+
+        .log-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .log-item {
+            background: #fff;
+            border: 1px solid var(--c-border);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 12px;
+        }
+
+        .domain {
+            font-weight: 700;
+            font-size: 20px;
+            word-break: break-all;
+        }
+
+        .timestamp {
+            color: var(--c-text-muted);
+            font-size: 14px;
+        }
+
+        .reason {
+            margin: 0 0 16px 0;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .badge-block { background: #FEE2E2; color: var(--c-block); }
+        .badge-warn { background: #FEF3C7; color: var(--c-warn); }
+        .badge-safe { background: #D1FAE5; color: #065F46; }
+
+        .meta {
+            font-size: 15px;
+            color: var(--c-text-muted);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .action-taken {
+            font-weight: 600;
+        }
+        
+        .redirect-chain {
+            margin-top: 12px;
+            padding: 12px;
+            background: var(--c-surface);
+            border-radius: 6px;
+            font-size: 14px;
+            display: none; /* Hidden by default */
+        }
+        
+        .toggle-redirects {
+            background: none;
+            border: none;
+            color: var(--c-primary);
+            cursor: pointer;
+            padding: 0;
+            font-size: 15px;
+            text-decoration: underline;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px 24px;
+            color: var(--c-text-muted);
+        }
+
+        /* Whitelist Manager */
+        .whitelist-section {
+            margin-top: 64px;
+            background: #fff;
+            border: 1px solid var(--c-border);
+            border-radius: 8px;
+            padding: 24px;
+        }
+        
+        .whitelist-list {
+            margin-top: 16px;
+        }
+        
+        .whitelist-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--c-border);
+        }
+        
+        .whitelist-item:last-child {
+            border-bottom: none;
+        }
+        
+        .btn-remove {
+            color: var(--c-block);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>TrustPause Protection History</h1>
+            <p class="subtitle">Here is a record of everything TrustPause has stopped over the last 30 days.</p>
+        </header>
+
+        <main>
+            <ul class="log-list" id="history-container">
+                <div class="empty-state">Loading history...</div>
+            </ul>
+            
+            <div class="whitelist-section">
+                <h2 style="margin:0 0 8px 0; font-size:22px; color:var(--c-primary)">Whitelisted Sites</h2>
+                <p style="margin:0 0 16px 0; font-size: 16px; color:var(--c-text-muted);">Sites you chose to trust and not be warned about again.</p>
+                <div class="whitelist-list" id="whitelist-container">
+                    <div style="color:var(--c-text-muted); font-size: 16px;">No sites whitelisted.</div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="history.js"></script>
+</body>
+</html>
