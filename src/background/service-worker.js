@@ -8,7 +8,10 @@ const SUSPICIOUS_NODES = ['bit.ly', 'tinyurl.com', 't.co', 'goo.gl', 'ow.ly', 'i
 
 // Sync offline signatures on extension startup and every 24 hours
 chrome.runtime.onStartup.addListener(syncSignatures);
-chrome.runtime.onInstalled.addListener(() => {
+chrome.runtime.onInstalled.addListener((details) => {
+  if (details.reason === chrome.runtime.OnInstalledReason.INSTALL) {
+    chrome.tabs.create({ url: chrome.runtime.getURL("src/ui/onboarding.html") });
+  }
   syncSignatures();
   chrome.alarms.create('sync_signatures', { periodInMinutes: 1440 }); // 24 hours
   
