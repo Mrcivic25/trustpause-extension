@@ -405,9 +405,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       sendResponse({ success: true });
     })();
     return true;
-  } else if (request.type === 'GET_BRANDS') {
-    sendResponse(BRANDS || []);
-    return true;
+
   } else if (request.type === 'KILL_TAB') {
     if (sender.tab && sender.tab.id) {
       console.warn(`[TrustPause] Killing tab ${sender.tab.id} due to: ${request.reason}`);
