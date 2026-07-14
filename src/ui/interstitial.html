@@ -21,22 +21,22 @@
             This might be a scam website trying to trick you. Your personal information and money could be at risk if you continue. It's safer to go back.
         </p>
 
-        <button id="btn-read-aloud" style="background: none; border: 1px solid var(--c-primary); color: var(--c-primary); padding: 8px 16px; border-radius: 9999px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; margin-bottom: 24px;">
+        <button id="btn-read-aloud" aria-label="Read warning aloud" style="background: none; border: 1px solid var(--c-primary); color: var(--c-primary); padding: 8px 16px; border-radius: 9999px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; margin-bottom: 24px;">
             🔊 Read Warning Aloud
         </button>
 
         <div id="whitelist-container" style="display: none; margin-bottom: 24px; text-align: left; padding: 12px; background: #f8fafc; border-radius: 8px;">
             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 16px; color: #475569;">
-                <input type="checkbox" id="chk-whitelist" style="width: 20px; height: 20px; cursor: pointer;">
+                <input type="checkbox" id="chk-whitelist" aria-label="Allow this site in the future" style="width: 20px; height: 20px; cursor: pointer;">
                 Don't ask me again for this site
             </label>
         </div>
 
         <div class="actions">
             <!-- Safe action first -->
-            <button id="btn-back" class="btn-primary">Go Back (Safe)</button>
-            <button id="btn-continue" class="btn-secondary">Continue anyway</button>
-            <button id="btn-report" class="btn-secondary">Report this site</button>
+            <button id="btn-back" class="btn-primary" aria-label="Go back to safety">Go Back (Safe)</button>
+            <button id="btn-continue" class="btn-secondary" aria-label="Ignore warning and continue">Continue anyway</button>
+            <button id="btn-report" class="btn-secondary" aria-label="Report this site">Report this site</button>
         </div>
     </div>
     <script src="interstitial.js"></script>

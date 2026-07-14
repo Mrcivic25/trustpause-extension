@@ -46,8 +46,8 @@
     </div>
 
     <div class="actions" style="margin-top: 16px;">
-        <button id="btn-report-page" class="btn-primary" style="margin-bottom: 8px;">Report Current Page</button>
-        <button id="btn-clear-allowlist" class="btn-secondary">Clear Allowlist</button>
+        <button id="btn-report-page" class="btn-primary" aria-label="Report Current Page" style="margin-bottom: 8px;">Report Current Page</button>
+        <button id="btn-clear-allowlist" class="btn-secondary" aria-label="Clear Allowlist">Clear Allowlist</button>
     </div>
 
     <!-- Phase 3: Pairing UI -->
@@ -64,7 +64,7 @@
             <div class="pairing-input-group" style="display: flex; flex-direction: column; gap: 8px;">
                 <input type="text" id="pairing-code" aria-label="Pairing Code" placeholder="Code (e.g. 123-456)" maxlength="7" style="padding: 8px; border: 1px solid #CBD5E1; border-radius: 6px;">
                 <input type="password" id="pairing-password" aria-label="Pairing Password" placeholder="12-character Password" maxlength="12" style="padding: 8px; border: 1px solid #CBD5E1; border-radius: 6px;">
-                <button id="btn-pair" class="btn-primary">Link to Dashboard</button>
+                <button id="btn-pair" class="btn-primary" aria-label="Link to Dashboard">Link to Dashboard</button>
             </div>
             <p id="pairing-error" class="error-text" style="display: none;">Invalid Code</p>
         </div>
@@ -72,8 +72,8 @@
 
     <!-- Extra Links Section -->
     <div class="extra-links" style="margin-top: 16px; display: flex; justify-content: space-between; font-size: 13px;">
-        <a href="https://trustpause.app" target="_blank" style="color: #64748B; text-decoration: none;">Website</a>
-        <a href="https://trustpause.app/dashboard" target="_blank" style="color: #64748B; text-decoration: none;">Dashboard Settings</a>
+        <a href="https://trustpause.app" target="_blank" aria-label="Visit TrustPause Website" style="color: #64748B; text-decoration: none;">Website</a>
+        <a href="https://trustpause.app/dashboard" target="_blank" aria-label="Visit TrustPause Dashboard Settings" style="color: #64748B; text-decoration: none;">Dashboard Settings</a>
     </div>
 
     <script type="module" src="popup.js"></script>
