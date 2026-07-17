@@ -1,0 +1,22 @@
+name: Extension E2E Tests
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+    # Install dependencies including xvfb for headless chrome extension testing
+    - run: sudo apt-get install -y xvfb
+    - run: npm install
+    # Run tests using xvfb-run to provide a virtual display for Chrome
+    - run: xvfb-run --auto-servernum npm run test

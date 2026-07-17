@@ -1,0 +1,12 @@
+{
+  "name": "trustpause-extension",
+  "version": "1.0.0",
+  "description": "TrustPause Browser Extension",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "puppeteer": "^22.7.1",
+    "vitest": "^1.6.0"
+  }
+}
