@@ -2,10 +2,10 @@ import { CONFIG } from '../shared/utils.js';
 
 export async function getCachedResult(domain) {
   return new Promise((resolve) => {
-    chrome.storage.local.get([domain], (result) => {
-      const data = result[domain];
+    chrome.storage.local.get([`cache_${domain}`], (result) => {
+      const data = result[`cache_${domain}`];
       if (data && (Date.now() - data.timestamp < CONFIG.CACHE_TTL_MS)) {
-        resolve(data.status);
+        resolve(data.result);
       } else {
         resolve(null);
       }
@@ -13,13 +13,13 @@ export async function getCachedResult(domain) {
   });
 }
 
-export async function setCachedResult(domain, status) {
+export async function setCachedResult(domain, result) {
   const data = {
-    status,
+    result,
     timestamp: Date.now()
   };
   return new Promise((resolve) => {
-    chrome.storage.local.set({ [domain]: data }, () => resolve());
+    chrome.storage.local.set({ [`cache_${domain}`]: data }, () => resolve());
   });
 }
 
