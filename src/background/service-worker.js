@@ -62,13 +62,16 @@ async function sendAlertToDashboard(domain, reason, metadata = null) {
   if (!caregiverId || !pairingToken) return;
 
   try {
-    await fetch(`${CONFIG.BACKEND_URL}/extension/alerts`, {
+    const res = await fetch(`${CONFIG.BACKEND_URL}/extension/alerts`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ caregiverId, token: pairingToken, domain, reason, metadata })
     });
+    const data = await res.json();
+    return data.alertId;
   } catch (e) {
     console.error("Alert broadcast failed", e);
+    return null;
   }
 }
 
@@ -124,10 +127,34 @@ async function checkDomainWithBackend(domain, rChainCount, rChainUrls, hasAdTrac
   }
 }
 
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.type === 'CHECK_DOMAIN') {
-    const url = request.url;
-    const favicon = request.favicon;
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === 'UPDATE_ALERT_ACTION') {
+    (async () => {
+      try {
+        const { pairingToken } = await chrome.storage.local.get(['pairingToken']);
+        if (!pairingToken || !message.alertId) return sendResponse({ success: false });
+
+        await fetch(`${CONFIG.BACKEND_URL}/extension/alerts`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            token: pairingToken,
+            alertId: message.alertId,
+            actionTaken: message.actionTaken
+          })
+        });
+        sendResponse({ success: true });
+      } catch (e) {
+        console.error("Failed to update alert action", e);
+        sendResponse({ success: false });
+      }
+    })();
+    return true; // Keep message channel open for async response
+  }
+
+  if (message.type === 'CHECK_DOMAIN') {
+    const url = message.url;
+    const favicon = message.favicon;
     const domain = extractDomain(url);
     const tabId = sender.tab ? sender.tab.id : null;
     const rChain = (tabId && redirectChains[tabId]) ? redirectChains[tabId] : { count: 0, urls: [] };
@@ -207,6 +234,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       }
       
       let finalResult = backendResult;
+      let alertId = null;
 
       // Feature 1: Screenshot-Based Visual Similarity Check
       if (finalResult.status === 'WARN' || finalResult.isNewDomain) {
@@ -284,7 +312,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
         // Feature: Send to Caregiver Dashboard
         if (finalResult.status === 'BLOCK' || finalResult.status === 'WARN') {
-          await sendAlertToDashboard(domain, finalResult.reason, {
+          alertId = await sendAlertToDashboard(domain, finalResult.reason, {
             redirectChain: rChain.urls,
             domainAgeDays: finalResult.domainAgeDays || null,
             hasAdTracking: hasAdTracking,
@@ -294,13 +322,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       }
 
       await setCachedResult(domain, finalResult);
-      sendResponse({ ...finalResult, dryRun: CONFIG.DRY_RUN });
+      sendResponse({ ...finalResult, dryRun: CONFIG.DRY_RUN, alertId });
     })();
 
     return true;
-  } else if (request.type === 'REPORT_SENSITIVE_FORMS') {
+  } else if (message.type === 'REPORT_SENSITIVE_FORMS') {
     (async () => {
-      const domain = extractDomain(request.url);
+      const domain = extractDomain(message.url);
       if (!domain) return;
       
       const cached = await getCachedResult(domain);

@@ -30,7 +30,8 @@ const runDomainCheck = (url) => {
             const themeParam = response.theme ? `&theme=${encodeURIComponent(response.theme)}` : '';
             const reasonParam = response.reason ? `&reason=${encodeURIComponent(response.reason)}` : '';
             const statusParam = response.status ? `&status=${encodeURIComponent(response.status)}` : '';
-            window.location.href = chrome.runtime.getURL(`src/ui/interstitial.html?target=${encodeURIComponent(url)}${reasonParam}${themeParam}${statusParam}`);
+            const alertIdParam = response.alertId ? `&alertId=${encodeURIComponent(response.alertId)}` : '';
+            window.location.href = chrome.runtime.getURL(`src/ui/interstitial.html?target=${encodeURIComponent(url)}${reasonParam}${themeParam}${statusParam}${alertIdParam}`);
         }
     });
 };

@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const reason = params.get('reason');
     const theme = params.get('theme') || 'scam';
     const status = params.get('status') || '';
+    const alertId = params.get('alertId');
 
     document.body.setAttribute('data-theme', theme);
 
@@ -68,6 +69,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const { hostname } = new URL(targetUrl);
         const domain = hostname.replace(/^www\./, '').toLowerCase();
 
+        if (alertId) {
+            chrome.runtime.sendMessage({ type: 'UPDATE_ALERT_ACTION', alertId, actionTaken: 'blocked' });
+        }
+
         chrome.runtime.sendMessage({ type: 'HISTORY_BACK', domain }, () => {
             if (window.history.length > 2) {
                 window.history.go(-2);
@@ -90,6 +95,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const { hostname } = new URL(targetUrl);
             const domain = hostname.replace(/^www\./, '').toLowerCase();
             
+            if (alertId) {
+                chrome.runtime.sendMessage({ type: 'UPDATE_ALERT_ACTION', alertId, actionTaken: 'bypassed' });
+            }
+
             if (theme === 'remote' || theme === 'payment') {
                 // Ephemeral allowlist for this session only
                 chrome.runtime.sendMessage({ type: 'SESSION_ALLOW', domain }, () => {
@@ -115,6 +124,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const { hostname } = new URL(targetUrl);
             const domain = hostname.replace(/^www\./, '').toLowerCase();
             
+            if (alertId) {
+                chrome.runtime.sendMessage({ type: 'UPDATE_ALERT_ACTION', alertId, actionTaken: 'blocked' });
+            }
+
             chrome.runtime.sendMessage({ type: 'REPORT_DOMAIN', domain, reason: reason }, (response) => {
                 btnReport.textContent = "Reported!";
                 btnReport.style.backgroundColor = "#D1FAE5";
