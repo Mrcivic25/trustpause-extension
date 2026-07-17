@@ -132,7 +132,11 @@ function initInPageScanning() {
         // 2. Domain-Specific Contextual Checks
         // Only trigger on checkout/cart pages for large gift card purchases (> $500)
         const domain = extractDomain(window.location.href);
-        const giftCardRetailers = ['amazon.com', 'walmart.com', 'target.com', 'bestbuy.com', 'apple.com', 'play.google.com', 'cvs.com', 'walgreens.com', 'kroger.com', 'homedepot.com', 'lowes.com'];
+        const giftCardRetailers = [
+            'amazon.com', 'walmart.com', 'target.com', 'bestbuy.com', 'apple.com', 'play.google.com', 
+            'cvs.com', 'walgreens.com', 'kroger.com', 'homedepot.com', 'lowes.com',
+            'thegiftcardshop.com', 'raise.com', 'cardcash.com', 'giftcards.com', 'perfectgift.com', 'mygiftcardsplus.com'
+        ];
         
         if (giftCardRetailers.includes(domain)) {
             const path = window.location.pathname.toLowerCase();
