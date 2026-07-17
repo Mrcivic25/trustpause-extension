@@ -327,12 +327,12 @@ input:checked + .slider:before {
     display: none;
 }
 .compact-dropdown summary::after {
-    content: "?";
+    content: "\25BC";
     font-size: 10px;
     color: var(--text-muted);
 }
 .compact-dropdown[open] summary::after {
-    content: "?";
+    content: "\25B2";
 }
 .compact-dropdown[open] summary {
     margin-bottom: 12px;
