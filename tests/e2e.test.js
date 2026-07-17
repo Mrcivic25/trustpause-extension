@@ -38,7 +38,9 @@ beforeAll(async () => {
     headless: "new", 
     args: [
       `--disable-extensions-except=${EXTENSION_PATH}`,
-      `--load-extension=${EXTENSION_PATH}`
+      `--load-extension=${EXTENSION_PATH}`,
+      `--no-sandbox`,
+      `--disable-setuid-sandbox`
     ]
   });
 });
