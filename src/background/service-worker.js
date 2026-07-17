@@ -392,7 +392,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       const isAllowed = await checkAllowlist(domain);
       if (isAllowed) return;
 
-      const safeDomains = ['microsoft.com', 'google.com', 'apple.com'];
+      const safeDomains = ['microsoft.com', 'google.com', 'apple.com', 'trustpause.app', 'localhost'];
       if (safeDomains.some(d => domain === d || domain.endsWith('.' + d))) return;
 
       // Update stats
@@ -499,7 +499,7 @@ chrome.downloads.onCreated.addListener(async (downloadItem) => {
   const isAllowed = await checkAllowlist(domain);
   if (isAllowed) return;
 
-  const safeDomains = ['microsoft.com', 'google.com', 'apple.com', 'zoom.us', 'mozilla.org'];
+  const safeDomains = ['microsoft.com', 'google.com', 'apple.com', 'zoom.us', 'mozilla.org', 'trustpause.app', 'localhost'];
   if (safeDomains.some(d => domain === d || domain.endsWith('.' + d))) return;
 
   chrome.downloads.pause(downloadItem.id, () => {
