@@ -178,6 +178,45 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 
     (async () => {
+      let finalResult = null;
+      let alertId = null;
+
+      // Helper to finalize and send response
+      const finalizeCheck = async (result) => {
+        if (result.status !== 'SAFE') {
+          await setSessionFlag('last_flagged_time', Date.now());
+          
+          const { blocked_count, history_log } = await chrome.storage.local.get(['blocked_count', 'history_log']);
+          await chrome.storage.local.set({ blocked_count: (blocked_count || 0) + 1 });
+
+          // Record to history log
+          const log = history_log || [];
+          log.unshift({
+            timestamp: Date.now(),
+            domain: domain,
+            reason: result.reason,
+            status: result.status,
+            action: 'pending',
+            redirects: rChain.urls
+          });
+          if (log.length > 500) log.length = 500;
+          await chrome.storage.local.set({ history_log: log });
+
+          // Send to Caregiver Dashboard
+          if (result.status === 'BLOCK' || result.status === 'WARN') {
+            alertId = await sendAlertToDashboard(domain, result.reason, {
+              redirectChain: rChain.urls,
+              domainAgeDays: result.domainAgeDays || null,
+              hasAdTracking: hasAdTracking,
+              matchedBrand: result.matchedBrand || null
+            });
+          }
+        }
+
+        await setCachedResult(domain, result);
+        sendResponse({ ...result, dryRun: CONFIG.DRY_RUN, alertId });
+      };
+
       // 0. Check if protection is disabled
       const { protection_disabled } = await chrome.storage.local.get(['protection_disabled']);
       if (protection_disabled) {
@@ -194,23 +233,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       // 1.5. Check User Blocklist (Manually Reported)
       const isUserBlocked = await checkUserBlocklist(domain);
       if (isUserBlocked) {
-        const result = { status: 'BLOCK', reason: 'You have manually reported and blocked this site.' };
-        await setSessionFlag('last_flagged_time', Date.now());
-        return sendResponse({ ...result, dryRun: CONFIG.DRY_RUN });
+        return await finalizeCheck({ status: 'BLOCK', reason: 'You have manually reported and blocked this site.' });
       }
 
       // 2. Check Result Cache (so we don't re-run expensive checks)
       const cached = await getCachedResult(domain);
       if (cached) {
-        return sendResponse({ status: cached.status, reason: cached.reason, dryRun: CONFIG.DRY_RUN });
+        // Do not re-alert the dashboard if it's a cached block from the SAME session/recent time
+        // Actually, we DO want to log it if they hit it again, but maybe not spam. We'll let finalizeCheck handle it.
+        return await finalizeCheck(cached);
       }
 
       // Feature: Punycode/Homograph Detection
       if (domain.includes('xn--')) {
-        await setSessionFlag('last_flagged_time', Date.now());
-        const result = { status: 'BLOCK', reason: 'High Risk: This domain uses invisible foreign characters (Punycode) to impersonate a legitimate website.' };
-        await setCachedResult(domain, result);
-        return sendResponse({ ...result, dryRun: CONFIG.DRY_RUN });
+        return await finalizeCheck({ status: 'BLOCK', reason: 'High Risk: This domain uses invisible foreign characters (Punycode) to impersonate a legitimate website.' });
       }
 
       // ----------------------------------------------------------------
@@ -218,23 +254,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       // ----------------------------------------------------------------
       const localSig = await checkLocalSignature(domain);
       if (localSig.isMalicious) {
-        await setSessionFlag('last_flagged_time', Date.now());
-        const result = { status: 'BLOCK', reason: `Flagged by known threat list: ${localSig.source}` };
-        await setCachedResult(domain, result);
-        return sendResponse({ ...result, dryRun: CONFIG.DRY_RUN });
+        return await finalizeCheck({ status: 'BLOCK', reason: `Flagged by known threat list: ${localSig.source}` });
       }
 
       // ----------------------------------------------------------------
       // TIER 2: ASYNC BACKEND CHECKS (Safe Browsing & RDAP Domain Age & Scoring)
       // ----------------------------------------------------------------
-      const backendResult = await checkDomainWithBackend(domain, rChain.count, rChain.urls, hasAdTracking, favicon);
-
-      if (backendResult.status !== 'SAFE') {
-        await setSessionFlag('last_flagged_time', Date.now());
-      }
-      
-      let finalResult = backendResult;
-      let alertId = null;
+      finalResult = await checkDomainWithBackend(domain, rChain.count, rChain.urls, hasAdTracking, favicon);
 
       // Feature 1: Screenshot-Based Visual Similarity Check
       if (finalResult.status === 'WARN' || finalResult.isNewDomain) {
@@ -266,11 +292,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     if (data.match) {
                       console.warn(`[TrustPause Feature 1] Visual match confirmed against ${targetBrand} (Distance: ${data.distance}). Escalating to BLOCK.`);
                       
-                      // Escalate and redirect the active tab instantly
                       const escalatedReason = `High Risk: This site looks identical to the real ${targetBrand} website, but the address is wrong. This is a confirmed phishing clone.`;
-                      
                       const newResult = { status: 'BLOCK', reason: escalatedReason };
-                      await setCachedResult(domain, newResult);
+                      
+                      // We need to re-run finalize check manually here because the original request already responded with WARN
+                      await finalizeCheck(newResult);
 
                       // Redirect to interstitial
                       const interstitialUrl = chrome.runtime.getURL(
@@ -292,37 +318,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
       }
 
-      if (finalResult.status !== 'SAFE') {
-        const { blocked_count, history_log } = await chrome.storage.local.get(['blocked_count', 'history_log']);
-        await chrome.storage.local.set({ blocked_count: (blocked_count || 0) + 1 });
-
-        // Feature 4: Record to history log
-        const log = history_log || [];
-        log.unshift({
-          timestamp: Date.now(),
-          domain: domain,
-          reason: finalResult.reason,
-          status: finalResult.status,
-          action: 'pending',
-          redirects: rChain.urls // Store redirect chain for details
-        });
-        // Keep it reasonable, max 500 items
-        if (log.length > 500) log.length = 500;
-        await chrome.storage.local.set({ history_log: log });
-
-        // Feature: Send to Caregiver Dashboard
-        if (finalResult.status === 'BLOCK' || finalResult.status === 'WARN') {
-          alertId = await sendAlertToDashboard(domain, finalResult.reason, {
-            redirectChain: rChain.urls,
-            domainAgeDays: finalResult.domainAgeDays || null,
-            hasAdTracking: hasAdTracking,
-            matchedBrand: finalResult.matchedBrand || null
-          });
-        }
-      }
-
-      await setCachedResult(domain, finalResult);
-      sendResponse({ ...finalResult, dryRun: CONFIG.DRY_RUN, alertId });
+      await finalizeCheck(finalResult);
     })();
 
     return true;
