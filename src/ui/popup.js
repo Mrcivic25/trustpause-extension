@@ -100,6 +100,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const errorText = document.getElementById('pairing-error');
     const statePaired = document.getElementById('paired-state');
     const stateUnpaired = document.getElementById('unpaired-state');
+    
+    // Phase 4: Unbind UI Elements
+    const btnUnbind = document.getElementById('btn-unbind');
+    const unbindConfirmState = document.getElementById('unbind-confirm-state');
+    const btnUnbindConfirm = document.getElementById('btn-unbind-confirm');
+    const btnUnbindCancel = document.getElementById('btn-unbind-cancel');
 
     // Load pairing state
     chrome.storage.local.get(['caregiverId', 'pairingToken'], (result) => {
@@ -157,6 +163,48 @@ document.addEventListener('DOMContentLoaded', async () => {
                 btnPair.textContent = 'Link to Dashboard';
                 btnPair.disabled = false;
             }
+        });
+    }
+
+    if (btnUnbind) {
+        btnUnbind.addEventListener('click', () => {
+            btnUnbind.style.display = 'none';
+            unbindConfirmState.style.display = 'flex';
+        });
+
+        btnUnbindCancel.addEventListener('click', () => {
+            unbindConfirmState.style.display = 'none';
+            btnUnbind.style.display = 'block';
+        });
+
+        btnUnbindConfirm.addEventListener('click', async () => {
+            btnUnbindConfirm.disabled = true;
+            btnUnbindConfirm.textContent = 'Unbinding...';
+
+            chrome.storage.local.get(['pairingToken'], async (result) => {
+                if (result.pairingToken) {
+                    try {
+                        await fetch(`${CONFIG.BACKEND_URL}/extension/pair`, {
+                            method: 'DELETE',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ token: result.pairingToken })
+                        });
+                    } catch (e) {
+                        console.error('Failed to notify backend of unbind', e);
+                    }
+                }
+
+                chrome.storage.local.remove(['caregiverId', 'pairingToken'], () => {
+                    statePaired.style.display = 'none';
+                    stateUnpaired.style.display = 'block';
+                    
+                    // Reset UI
+                    btnUnbindConfirm.disabled = false;
+                    btnUnbindConfirm.textContent = 'Yes, unbind';
+                    unbindConfirmState.style.display = 'none';
+                    btnUnbind.style.display = 'block';
+                });
+            });
         });
     }
 });

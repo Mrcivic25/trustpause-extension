@@ -13,32 +13,32 @@ function extractDomain(url) {
 // ---------------------------------------------------------
 let lastCheckedUrl = window.location.href;
 
+const getFaviconUrl = () => {
+    let favicon = document.querySelector('link[rel="shortcut icon"], link[rel="icon"]');
+    return favicon ? favicon.href : new URL('/favicon.ico', window.location.href).href;
+};
+
+const runDomainCheck = (url) => {
+    chrome.runtime.sendMessage({ type: "CHECK_DOMAIN", url: url, favicon: getFaviconUrl() }, (response) => {
+        if (!response || response.status === 'SAFE' || response.dryRun) {
+            if (response && response.dryRun && response.status !== 'SAFE') {
+                console.warn(`[TrustPause - DRY RUN] Flagged as ${response.status}: ${response.reason}`);
+            }
+            // Page is safe, init or re-init in-page scanning
+            initInPageScanning();
+        } else {
+            const themeParam = response.theme ? `&theme=${encodeURIComponent(response.theme)}` : '';
+            const reasonParam = response.reason ? `&reason=${encodeURIComponent(response.reason)}` : '';
+            const statusParam = response.status ? `&status=${encodeURIComponent(response.status)}` : '';
+            window.location.href = chrome.runtime.getURL(`src/ui/interstitial.html?target=${encodeURIComponent(url)}${reasonParam}${themeParam}${statusParam}`);
+        }
+    });
+};
+
 if (window.location.protocol !== 'chrome-extension:') {
     if (window.self !== window.top) {
         console.log('[TrustPause] Running inside cross-origin iframe. Sandboxed inspection enabled.');
     }
-
-    const getFaviconUrl = () => {
-        let favicon = document.querySelector('link[rel="shortcut icon"], link[rel="icon"]');
-        return favicon ? favicon.href : new URL('/favicon.ico', window.location.href).href;
-    };
-
-    const runDomainCheck = (url) => {
-        chrome.runtime.sendMessage({ type: "CHECK_DOMAIN", url: url, favicon: getFaviconUrl() }, (response) => {
-            if (!response || response.status === 'SAFE' || response.dryRun) {
-                if (response && response.dryRun && response.status !== 'SAFE') {
-                    console.warn(`[TrustPause - DRY RUN] Flagged as ${response.status}: ${response.reason}`);
-                }
-                // Page is safe, init or re-init in-page scanning
-                initInPageScanning();
-            } else {
-                const themeParam = response.theme ? `&theme=${encodeURIComponent(response.theme)}` : '';
-                const reasonParam = response.reason ? `&reason=${encodeURIComponent(response.reason)}` : '';
-                const statusParam = response.status ? `&status=${encodeURIComponent(response.status)}` : '';
-                window.location.href = chrome.runtime.getURL(`src/ui/interstitial.html?target=${encodeURIComponent(url)}${reasonParam}${themeParam}${statusParam}`);
-            }
-        });
-    };
     // ---------------------------------------------------------
     // Option 3: Automated Tracking Parameter Stripping
     // ---------------------------------------------------------
