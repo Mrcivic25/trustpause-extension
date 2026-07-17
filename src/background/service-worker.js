@@ -127,20 +127,20 @@ async function checkDomainWithBackend(domain, rChainCount, rChainUrls, hasAdTrac
   }
 }
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === 'UPDATE_ALERT_ACTION') {
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.type === 'UPDATE_ALERT_ACTION') {
     (async () => {
       try {
         const { pairingToken } = await chrome.storage.local.get(['pairingToken']);
-        if (!pairingToken || !message.alertId) return sendResponse({ success: false });
+        if (!pairingToken || !request.alertId) return sendResponse({ success: false });
 
         await fetch(`${CONFIG.BACKEND_URL}/extension/alerts`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             token: pairingToken,
-            alertId: message.alertId,
-            actionTaken: message.actionTaken
+            alertId: request.alertId,
+            actionTaken: request.actionTaken
           })
         });
         sendResponse({ success: true });
@@ -152,9 +152,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true; // Keep message channel open for async response
   }
 
-  if (message.type === 'CHECK_DOMAIN') {
-    const url = message.url;
-    const favicon = message.favicon;
+  if (request.type === 'CHECK_DOMAIN') {
+    const url = request.url;
+    const favicon = request.favicon;
     const domain = extractDomain(url);
     const tabId = sender.tab ? sender.tab.id : null;
     const rChain = (tabId && redirectChains[tabId]) ? redirectChains[tabId] : { count: 0, urls: [] };
@@ -322,9 +322,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     })();
 
     return true;
-  } else if (message.type === 'REPORT_SENSITIVE_FORMS') {
+  } else if (request.type === 'REPORT_SENSITIVE_FORMS') {
     (async () => {
-      const domain = extractDomain(message.url);
+      const domain = extractDomain(request.url);
       if (!domain) return;
       
       const cached = await getCachedResult(domain);
