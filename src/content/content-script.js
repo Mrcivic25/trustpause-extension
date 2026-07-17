@@ -96,22 +96,50 @@ function initInPageScanning() {
     // Check page text for common scam urgency keywords
     setTimeout(() => {
         const pageText = document.body.innerText.toLowerCase();
+        
+        // 1. Global Scam Keywords (High Urgency)
         const scamKeywords = [
-            "your pc is infected",
-            "call microsoft support",
-            "windows defender has detected",
-            "your computer has been locked",
-            "renew your mcafee",
-            "bitcoin wallet compromised"
+            "your pc is infected", "your computer is infected",
+            "call microsoft immediately", "call microsoft support",
+            "windows defender has detected", "trojan detected", "virus detected",
+            "your computer has been locked", "account locked",
+            "renew your mcafee", "security alert",
+            "bitcoin wallet compromised",
+            "refund department", "tech support",
+            "bitcoin atm", "safe account", "wire transfer",
+            "download anydesk", "install teamviewer",
+            "verify your identity immediately", "suspicious activity",
+            "final notice"
         ];
         
         const isSuspicious = scamKeywords.some(keyword => pageText.includes(keyword));
         
         if (isSuspicious) {
+            // Tell background to set the 30-min contextual window
+            chrome.runtime.sendMessage({ 
+                type: "REPORT_SCAM_EXPOSURE",
+                url: window.location.href
+            });
+            
+            // Still escalate immediately for the really bad ones
             chrome.runtime.sendMessage({ 
                 type: "REPORT_SUSPICIOUS_DOM", 
                 url: window.location.href,
                 reason: "Suspicious urgency keywords detected on the page."
+            });
+        }
+
+        // 2. Domain-Specific Contextual Checks
+        // If they are on a gift card retailer and we see "gift card", trigger a warning immediately
+        const domain = extractDomain(window.location.href);
+        const giftCardRetailers = ['amazon.com', 'walmart.com', 'target.com', 'bestbuy.com', 'apple.com', 'play.google.com', 'cvs.com', 'walgreens.com', 'kroger.com', 'homedepot.com', 'lowes.com'];
+        
+        if (giftCardRetailers.includes(domain) && pageText.includes('gift card')) {
+            // Contextual escalation immediately
+            chrome.runtime.sendMessage({ 
+                type: "REPORT_SUSPICIOUS_DOM",
+                url: window.location.href,
+                reason: "Contextual Warning: You are looking at gift cards. No legitimate company or government agency accepts gift cards as payment."
             });
         }
     }, 2000); // Wait 2s for dynamic content to load

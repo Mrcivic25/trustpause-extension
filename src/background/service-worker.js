@@ -258,12 +258,32 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       }
 
       const sensitive = await checkSensitiveDomain(domain);
-      if (sensitive && sensitive.alwaysWarn) {
-        let theme = sensitive.category === 'remote_access' ? 'remote' : 'payment';
-        let reason = sensitive.category === 'remote_access' 
-             ? 'Remote access tools are frequently used by scammers to steal money.'
-             : 'Be very careful before sending money or gift cards. Stop and call a family member.';
-        return await finalizeCheck({ status: 'WARN', reason, theme });
+      if (sensitive) {
+        if (sensitive.alwaysWarn) {
+          let theme = sensitive.category === 'remote_access' ? 'remote' : 'payment';
+          let reason = sensitive.category === 'remote_access' 
+               ? 'Remote access tools are frequently used by scammers to steal money.'
+               : 'Be very careful before sending money or gift cards. Stop and call a family member.';
+          return await finalizeCheck({ status: 'WARN', reason, theme });
+        } else {
+          // Contextual Warnings
+          const scamExposure = await getSessionFlag('saw_scam_alert');
+          if (scamExposure && (Date.now() - scamExposure < 30 * 60 * 1000)) { // 30 min window
+            let reason = '';
+            if (sensitive.category === 'gift_cards') {
+              reason = 'Strong Warning: You recently encountered a potential scam and are now visiting a gift card retailer. No legitimate company or government agency accepts gift cards as payment.';
+            } else if (sensitive.category === 'crypto') {
+              reason = 'Strong Warning: You recently encountered a potential scam and are now visiting a cryptocurrency exchange. If someone is telling you to buy Bitcoin to fix a problem or protect your money, it is almost certainly a scam.';
+            } else if (sensitive.category === 'money_transfer') {
+              reason = 'Strong Warning: You recently encountered a potential scam and are now visiting a money transfer service. Only send money to people you personally know and trust.';
+            } else if (sensitive.category === 'bank') {
+              reason = 'Strong Warning: You recently encountered a potential scam and are now visiting your bank. If someone claimed your bank instructed them to move money to a "safe account," this is a scam.';
+            } else {
+              reason = 'Strong Warning: You recently encountered a potential scam and are now visiting a sensitive website. Please be extremely careful.';
+            }
+            return await finalizeCheck({ status: 'WARN', reason, theme: 'payment' });
+          }
+        }
       }
 
       // ----------------------------------------------------------------
@@ -420,6 +440,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         console.error("Failed to un-report domain", e);
         sendResponse({ success: false });
       }
+    })();
+    return true;
+  } else if (request.type === 'REPORT_SCAM_EXPOSURE') {
+    (async () => {
+      await setSessionFlag('saw_scam_alert', Date.now());
+      console.warn(`[TrustPause] User exposed to scam keyword at ${request.url}. Context window active for 30 mins.`);
     })();
     return true;
   } else if (request.type === 'REPORT_SUSPICIOUS_DOM') {
