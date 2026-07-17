@@ -257,6 +257,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return await finalizeCheck({ status: 'BLOCK', reason: `Flagged by known threat list: ${localSig.source}` });
       }
 
+      const sensitive = await checkSensitiveDomain(domain);
+      if (sensitive && sensitive.alwaysWarn) {
+        let theme = sensitive.category === 'remote_access' ? 'remote' : 'payment';
+        let reason = sensitive.category === 'remote_access' 
+             ? 'Remote access tools are frequently used by scammers to steal money.'
+             : 'Be very careful before sending money or gift cards. Stop and call a family member.';
+        return await finalizeCheck({ status: 'WARN', reason, theme });
+      }
+
       // ----------------------------------------------------------------
       // TIER 2: ASYNC BACKEND CHECKS (Safe Browsing & RDAP Domain Age & Scoring)
       // ----------------------------------------------------------------
