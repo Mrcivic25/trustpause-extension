@@ -70,10 +70,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         chrome.runtime.sendMessage({ type: 'HISTORY_BACK', domain }, () => {
             if (window.history.length > 2) {
-                window.history.back();
+                window.history.go(-2);
             } else {
-                // If there's nowhere to go back to, close tab or go to a safe page like Google
-                window.location.href = "https://www.google.com";
+                // If there's nowhere to go back to (e.g. opened in new tab), try to close the tab
+                window.close();
+                // Fallback if window.close() fails
+                setTimeout(() => {
+                    window.location.href = "https://www.google.com";
+                }, 100);
             }
         });
     });

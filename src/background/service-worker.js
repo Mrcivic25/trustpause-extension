@@ -1,5 +1,5 @@
 import { extractDomain, CONFIG } from '../shared/utils.js';
-import { getCachedResult, setCachedResult, checkAllowlist, checkLocalSignature, syncSignatures, checkSensitiveDomain, setSessionFlag, getSessionFlag, checkSessionAllowlist, addSessionAllowlist } from './cache-manager.js';
+import { getCachedResult, setCachedResult, checkAllowlist, checkLocalSignature, syncSignatures, checkSensitiveDomain, setSessionFlag, getSessionFlag, checkSessionAllowlist, addSessionAllowlist, checkUserBlocklist } from './cache-manager.js';
 import { computeDHash } from './hasher.js';
 
 // Redirect Chain Tracking (Feature 3)
@@ -96,7 +96,7 @@ if (chrome.webNavigation) {
   });
 }
 
-async function checkDomainWithBackend(domain, rChainCount, rChainUrls, hasAdTracking) {
+async function checkDomainWithBackend(domain, rChainCount, rChainUrls, hasAdTracking, favicon) {
   try {
     const { pairingToken } = await chrome.storage.local.get(['pairingToken']);
     const tokenParam = pairingToken ? `&token=${pairingToken}` : '';
@@ -109,7 +109,8 @@ async function checkDomainWithBackend(domain, rChainCount, rChainUrls, hasAdTrac
         token: pairingToken,
         hasAdTracking,
         rChainCount,
-        rChainUrls
+        rChainUrls,
+        favicon
       })
     });
     if (!response.ok) {
@@ -126,6 +127,7 @@ async function checkDomainWithBackend(domain, rChainCount, rChainUrls, hasAdTrac
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'CHECK_DOMAIN') {
     const url = request.url;
+    const favicon = request.favicon;
     const domain = extractDomain(url);
     const tabId = sender.tab ? sender.tab.id : null;
     const rChain = (tabId && redirectChains[tabId]) ? redirectChains[tabId] : { count: 0, urls: [] };
@@ -157,8 +159,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
       // 1. Check Allowlist
       const isAllowed = await checkAllowlist(domain);
-      if (isAllowed) {
+      const isSessionAllowed = await checkSessionAllowlist(domain);
+      if (isAllowed || isSessionAllowed) {
         return sendResponse({ status: 'SAFE', reason: 'Allowlisted' });
+      }
+
+      // 1.5. Check User Blocklist (Manually Reported)
+      const isUserBlocked = await checkUserBlocklist(domain);
+      if (isUserBlocked) {
+        const result = { status: 'BLOCK', reason: 'You have manually reported and blocked this site.' };
+        await setSessionFlag('last_flagged_time', Date.now());
+        return sendResponse({ ...result, dryRun: CONFIG.DRY_RUN });
       }
 
       // 2. Check Result Cache (so we don't re-run expensive checks)
@@ -189,7 +200,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       // ----------------------------------------------------------------
       // TIER 2: ASYNC BACKEND CHECKS (Safe Browsing & RDAP Domain Age & Scoring)
       // ----------------------------------------------------------------
-      const backendResult = await checkDomainWithBackend(domain, rChain.count, rChain.urls, hasAdTracking);
+      const backendResult = await checkDomainWithBackend(domain, rChain.count, rChain.urls, hasAdTracking, favicon);
 
       if (backendResult.status !== 'SAFE') {
         await setSessionFlag('last_flagged_time', Date.now());
@@ -323,14 +334,52 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   } else if (request.type === 'REPORT_DOMAIN') {
     (async () => {
       try {
-        await fetch(`${CONFIG.BACKEND_URL}/report`, {
+        const { caregiverId, pairingToken } = await chrome.storage.local.get(['caregiverId', 'pairingToken']);
+        if (!caregiverId || !pairingToken) return sendResponse({ success: false });
+
+        await fetch(`${CONFIG.BACKEND_URL}/extension/report`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ domain: request.domain, reason: request.reason })
+          body: JSON.stringify({ domain: request.domain, reason: request.reason, token: pairingToken, caregiverId })
         });
+        
+        // Optimistically add to local user_blocklist
+        const { user_blocklist } = await chrome.storage.local.get(['user_blocklist']);
+        const list = user_blocklist || [];
+        if (!list.includes(request.domain)) {
+          list.push(request.domain);
+          await chrome.storage.local.set({ user_blocklist: list });
+        }
+        
         sendResponse({ success: true });
       } catch (e) {
         console.error("Failed to report domain", e);
+        sendResponse({ success: false });
+      }
+    })();
+    return true;
+  } else if (request.type === 'UNREPORT_DOMAIN') {
+    (async () => {
+      try {
+        const { caregiverId, pairingToken } = await chrome.storage.local.get(['caregiverId', 'pairingToken']);
+        if (!caregiverId || !pairingToken) return sendResponse({ success: false });
+
+        await fetch(`${CONFIG.BACKEND_URL}/extension/report`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ domain: request.domain, token: pairingToken, caregiverId })
+        });
+        
+        // Optimistically remove from local user_blocklist
+        const { user_blocklist } = await chrome.storage.local.get(['user_blocklist']);
+        if (user_blocklist) {
+          const list = user_blocklist.filter(d => d !== request.domain);
+          await chrome.storage.local.set({ user_blocklist: list });
+        }
+        
+        sendResponse({ success: true });
+      } catch (e) {
+        console.error("Failed to un-report domain", e);
         sendResponse({ success: false });
       }
     })();

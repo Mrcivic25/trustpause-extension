@@ -62,6 +62,10 @@ export async function syncSignatures() {
         await new Promise(resolve => chrome.storage.local.set({ allowlist: data.allowlist }, resolve));
       }
       
+      if (data.user_blocklist) {
+        await new Promise(resolve => chrome.storage.local.set({ user_blocklist: data.user_blocklist }, resolve));
+      }
+      
       if (data.protection_enabled !== undefined) {
         await new Promise(resolve => chrome.storage.local.set({ protection_disabled: !data.protection_enabled }, resolve));
       }
@@ -150,4 +154,13 @@ export async function addSessionAllowlist(domain) {
 export async function checkSessionAllowlist(domain) {
   const list = await getSessionFlag('session_allowlist') || [];
   return list.includes(domain);
+}
+
+export async function checkUserBlocklist(domain) {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(['user_blocklist'], (result) => {
+      const list = result.user_blocklist || [];
+      resolve(list.includes(domain));
+    });
+  });
 }

@@ -26,3 +26,6 @@ To load the extension locally for testing or development:
 - [Terms of Service](https://trustpause.app/terms)
 
 Thank you for helping us keep the web safe!
+
+## Data Attribution
+This project uses data from the [Phishing.Database](https://github.com/Phishing-Database/Phishing.Database) repository, available under the MIT License.

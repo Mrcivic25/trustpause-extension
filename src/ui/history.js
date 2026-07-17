@@ -25,9 +25,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    chrome.storage.local.get(['history_log', 'allowlist'], (result) => {
+    chrome.storage.local.get(['history_log', 'allowlist', 'user_blocklist'], (result) => {
         const log = result.history_log || [];
         const allowlist = result.allowlist || [];
+        const blocklist = result.user_blocklist || [];
 
         // Render History
         if (log.length === 0) {
@@ -98,6 +99,35 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 });
             });
+        }
+
+        // Render Blocklist
+        const blocklistContainer = document.getElementById('blocklist-container');
+        if (blocklistContainer) {
+            if (blocklist.length === 0) {
+                blocklistContainer.innerHTML = '<div style="color:var(--c-text-muted); font-size: 16px;" role="status">No sites reported.</div>';
+            } else {
+                blocklistContainer.innerHTML = '';
+                blocklist.forEach(domain => {
+                    const div = document.createElement('div');
+                    div.className = 'whitelist-item'; // Reuse styles
+                    div.innerHTML = `
+                        <span style="font-weight:600;">${escapeHTML(domain)}</span>
+                        <button class="btn-remove-block" aria-label="Un-report ${escapeHTML(domain)}" data-domain="${escapeHTML(domain)}">Un-report</button>
+                    `;
+                    blocklistContainer.appendChild(div);
+                });
+
+                // Bind remove buttons
+                document.querySelectorAll('.btn-remove-block').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const domainToRemove = e.target.getAttribute('data-domain');
+                        chrome.runtime.sendMessage({ type: 'UNREPORT_DOMAIN', domain: domainToRemove }, () => {
+                            window.location.reload();
+                        });
+                    });
+                });
+            }
         }
     });
 });

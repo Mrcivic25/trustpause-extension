@@ -12,6 +12,33 @@ function extractDomain(url) {
 // 1. Initial Domain Check (Tier 1, 2, 3) & Protection Features
 // ---------------------------------------------------------
 if (window.location.protocol !== 'chrome-extension:') {
+    if (window.self !== window.top) {
+        console.log('[TrustPause] Running inside cross-origin iframe. Sandboxed inspection enabled.');
+    }
+
+    let lastCheckedUrl = window.location.href;
+
+    const getFaviconUrl = () => {
+        let favicon = document.querySelector('link[rel="shortcut icon"], link[rel="icon"]');
+        return favicon ? favicon.href : new URL('/favicon.ico', window.location.href).href;
+    };
+
+    const runDomainCheck = (url) => {
+        chrome.runtime.sendMessage({ type: "CHECK_DOMAIN", url: url, favicon: getFaviconUrl() }, (response) => {
+            if (!response || response.status === 'SAFE' || response.dryRun) {
+                if (response && response.dryRun && response.status !== 'SAFE') {
+                    console.warn(`[TrustPause - DRY RUN] Flagged as ${response.status}: ${response.reason}`);
+                }
+                // Page is safe, init or re-init in-page scanning
+                initInPageScanning();
+            } else {
+                const themeParam = response.theme ? `&theme=${encodeURIComponent(response.theme)}` : '';
+                const reasonParam = response.reason ? `&reason=${encodeURIComponent(response.reason)}` : '';
+                const statusParam = response.status ? `&status=${encodeURIComponent(response.status)}` : '';
+                window.location.href = chrome.runtime.getURL(`src/ui/interstitial.html?target=${encodeURIComponent(url)}${reasonParam}${themeParam}${statusParam}`);
+            }
+        });
+    };
     // ---------------------------------------------------------
     // Option 3: Automated Tracking Parameter Stripping
     // ---------------------------------------------------------
@@ -41,35 +68,27 @@ if (window.location.protocol !== 'chrome-extension:') {
 
     window.addEventListener('beforeunload', () => {
         const timeSpent = performance.now();
-        // If the user leaves the page in less than 2.5 seconds without interacting, it's likely an auto-redirect (JS/Meta).
         if (timeSpent < 2500 && !userClicked) {
             chrome.runtime.sendMessage({ type: "RECORD_CLIENT_REDIRECT", url: window.location.href });
         }
     });
 
-
-
-    chrome.runtime.sendMessage({ type: "CHECK_DOMAIN", url: window.location.href }, (response) => {
-        if (!response || response.status === 'SAFE' || response.dryRun) {
-            if (response && response.dryRun && response.status !== 'SAFE') {
-                console.warn(`[Browser Shield - DRY RUN] Flagged as ${response.status}: ${response.reason}`);
-            }
-            // Page is safe (or dry run), continue loading normally and init Phase 2 features
-            initInPageScanning();
-        } else {
-            // Redirect to interstitial (OVERRIDE)
-            const themeParam = response.theme ? `&theme=${encodeURIComponent(response.theme)}` : '';
-            const reasonParam = response.reason ? `&reason=${encodeURIComponent(response.reason)}` : '';
-            const statusParam = response.status ? `&status=${encodeURIComponent(response.status)}` : '';
-            const interstitialUrl = chrome.runtime.getURL(
-                `src/ui/interstitial.html?target=${encodeURIComponent(window.location.href)}${reasonParam}${themeParam}${statusParam}`
-            );
-            window.location.href = interstitialUrl;
+    window.addEventListener('popstate', () => {
+        if (window.location.href !== lastCheckedUrl) {
+            lastCheckedUrl = window.location.href;
+            console.log('[TrustPause] SPA Route changed (popstate), re-evaluating:', lastCheckedUrl);
+            runDomainCheck(lastCheckedUrl);
         }
     });
+
+    runDomainCheck(window.location.href);
 }
 
+let inPageScannerInitialized = false;
+
 function initInPageScanning() {
+    if (inPageScannerInitialized) return;
+    inPageScannerInitialized = true;
     // ---------------------------------------------------------
     // 2. Zero-Day Content Scanner (Heuristics)
     // ---------------------------------------------------------
@@ -114,13 +133,26 @@ function initInPageScanning() {
     });
 
     // ---------------------------------------------------------
-    // 2.5 Form-Field Monitoring (Feature 2)
+    // 2.5 Form-Field Monitoring (Feature 2) & Shadow DOM Piercing
     // ---------------------------------------------------------
     let sensitiveFormsReported = false;
+    
+    function queryAllInputs(root) {
+        let inputs = Array.from(root.querySelectorAll('input'));
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT, null, false);
+        while (walker.nextNode()) {
+            const node = walker.currentNode;
+            if (node.shadowRoot) {
+                inputs = inputs.concat(queryAllInputs(node.shadowRoot));
+            }
+        }
+        return inputs;
+    }
+
     const scanForSensitiveFields = () => {
         if (sensitiveFormsReported) return;
 
-        const inputs = document.querySelectorAll('input');
+        const inputs = queryAllInputs(document);
         let foundSensitive = false;
 
         for (const input of inputs) {
@@ -150,6 +182,23 @@ function initInPageScanning() {
     };
 
     // ---------------------------------------------------------
+    // 2.6 Mixed Content Scanner
+    // ---------------------------------------------------------
+    const checkMixedContent = () => {
+        if (window.location.protocol === 'https:') {
+            const httpForms = document.querySelectorAll('form[action^="http://"]');
+            const httpScripts = document.querySelectorAll('script[src^="http://"]');
+            if (httpForms.length > 0 || httpScripts.length > 0) {
+                chrome.runtime.sendMessage({
+                    type: "REPORT_SUSPICIOUS_DOM",
+                    url: window.location.href,
+                    reason: "Mixed Content: Page uses HTTPS but transmits data or loads scripts via insecure HTTP."
+                });
+            }
+        }
+    };
+
+    // ---------------------------------------------------------
     // 3. Malicious Link Highlighter
     // ---------------------------------------------------------
     chrome.storage.local.get(['offline_signatures', 'protection_disabled'], (result) => {
@@ -167,9 +216,8 @@ function initInPageScanning() {
 
                 if (offlineSignatures[domain]) {
                     // Highlight the link
-                    link.style.border = '2px dashed red';
-                    link.style.backgroundColor = '#FEE2E2';
-                    link.style.color = '#DC2626';
+                    link.style.border = '2px solid #854F0B';
+                    link.style.backgroundColor = '#FAEEDA';
                     link.style.position = 'relative';
                     link.title = `⚠️ TrustPause Blocked: Known Threat (${offlineSignatures[domain]})`;
                     
@@ -184,23 +232,37 @@ function initInPageScanning() {
 
         // Run initially
         highlightMaliciousLinks();
+        checkMixedContent();
 
-        // Observe DOM for newly added links (e.g., infinite scroll or SPAs like Gmail)
+        // Observe DOM for newly added links (e.g., infinite scroll or SPAs)
+        let mutationDebounceTimer = null;
         const observer = new MutationObserver((mutations) => {
-            let shouldScan = false;
-            for (let mutation of mutations) {
-                if (mutation.addedNodes.length) {
-                    shouldScan = true;
-                    break;
+            if (mutationDebounceTimer) clearTimeout(mutationDebounceTimer);
+            mutationDebounceTimer = setTimeout(() => {
+                if (window.location.href !== lastCheckedUrl) {
+                    lastCheckedUrl = window.location.href;
+                    console.log('[TrustPause] SPA Route changed (mutation), re-evaluating:', lastCheckedUrl);
+                    runDomainCheck(lastCheckedUrl);
+                    return; // Re-evaluating will trigger everything if safe
                 }
-            }
-            if (shouldScan) {
-                highlightMaliciousLinks();
-                scanForSensitiveFields(); // Debounced effectively by the observer's natural rate, but could be explicitly debounced
-            }
+
+                let shouldScan = false;
+                for (let mutation of mutations) {
+                    if (mutation.addedNodes.length) {
+                        shouldScan = true;
+                        break;
+                    }
+                }
+                
+                if (shouldScan) {
+                    highlightMaliciousLinks();
+                    scanForSensitiveFields(); 
+                    checkMixedContent();
+                }
+            }, 300); // Debounce to prevent lag on heavy SPAs
         });
 
-        observer.observe(document.body, { childList: true, subtree: true });
+        observer.observe(document.documentElement, { childList: true, subtree: true });
         
         // Initial scan for forms
         scanForSensitiveFields();

@@ -185,15 +185,25 @@
                 <div class="empty-state">Loading history...</div>
             </ul>
             
-            <div class="whitelist-section">
-                <h2 style="margin:0 0 8px 0; font-size:22px; color:var(--c-primary)">Whitelisted Sites</h2>
-                <p style="margin:0 0 16px 0; font-size: 16px; color:var(--c-text-muted);">Sites you chose to trust and not be warned about again.</p>
-                <div class="whitelist-list" id="whitelist-container">
-                    <div style="color:var(--c-text-muted); font-size: 16px;">No sites whitelisted.</div>
+            <div class="split-layout" style="display: flex; gap: 24px; margin-top: var(--s-6);">
+                <div class="whitelist-section" style="flex: 1;">
+                    <h2>Trusted websites</h2>
+                    <p style="color: var(--c-text-muted); font-size: 14px; margin-bottom: 16px;">Sites you've allowed to bypass protection.</p>
+                    <div id="whitelist-container" class="card" style="padding: 16px;">
+                        <!-- Injected by JS -->
+                    </div>
+                </div>
+
+                <div class="blocklist-section" style="flex: 1;">
+                    <h2>My Reported Sites</h2>
+                    <p style="color: var(--c-text-muted); font-size: 14px; margin-bottom: 16px;">Sites you manually reported. These are always blocked.</p>
+                    <div id="blocklist-container" class="card" style="padding: 16px;">
+                        <!-- Injected by JS -->
+                    </div>
                 </div>
             </div>
-        </main>
     </div>
     <script src="history.js"></script>
 </body>
 </html>
+<!-- Data attribution: Phishing database provided by github.com/Phishing-Database/Phishing.Database (MIT License) -->
