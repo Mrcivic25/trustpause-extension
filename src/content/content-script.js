@@ -11,12 +11,12 @@ function extractDomain(url) {
 // ---------------------------------------------------------
 // 1. Initial Domain Check (Tier 1, 2, 3) & Protection Features
 // ---------------------------------------------------------
+let lastCheckedUrl = window.location.href;
+
 if (window.location.protocol !== 'chrome-extension:') {
     if (window.self !== window.top) {
         console.log('[TrustPause] Running inside cross-origin iframe. Sandboxed inspection enabled.');
     }
-
-    let lastCheckedUrl = window.location.href;
 
     const getFaviconUrl = () => {
         let favicon = document.querySelector('link[rel="shortcut icon"], link[rel="icon"]');
