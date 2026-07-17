@@ -130,17 +130,36 @@ function initInPageScanning() {
         }
 
         // 2. Domain-Specific Contextual Checks
-        // If they are on a gift card retailer and we see "gift card", trigger a warning immediately
+        // Only trigger on checkout/cart pages for large gift card purchases (> $500)
         const domain = extractDomain(window.location.href);
         const giftCardRetailers = ['amazon.com', 'walmart.com', 'target.com', 'bestbuy.com', 'apple.com', 'play.google.com', 'cvs.com', 'walgreens.com', 'kroger.com', 'homedepot.com', 'lowes.com'];
         
-        if (giftCardRetailers.includes(domain) && pageText.includes('gift card')) {
-            // Contextual escalation immediately
-            chrome.runtime.sendMessage({ 
-                type: "REPORT_SUSPICIOUS_DOM",
-                url: window.location.href,
-                reason: "Contextual Warning: You are looking at gift cards. No legitimate company or government agency accepts gift cards as payment."
-            });
+        if (giftCardRetailers.includes(domain)) {
+            const path = window.location.pathname.toLowerCase();
+            const isCartOrCheckout = path.includes('cart') || path.includes('checkout') || path.includes('basket') || path.includes('bag') || path.includes('buy');
+            
+            if (isCartOrCheckout && pageText.includes('gift card')) {
+                // Find all dollar amounts on the page (e.g. $500.00, $1,200.50)
+                const priceRegex = /\$[\d,]+\.\d{2}/g;
+                const prices = pageText.match(priceRegex);
+                let highestPrice = 0;
+                
+                if (prices) {
+                    prices.forEach(priceStr => {
+                        const val = parseFloat(priceStr.replace(/[\$,]/g, ''));
+                        if (val > highestPrice) highestPrice = val;
+                    });
+                }
+                
+                // If the cart total (or any visible price) exceeds $500, trigger the block
+                if (highestPrice >= 500) {
+                    chrome.runtime.sendMessage({ 
+                        type: "REPORT_SUSPICIOUS_DOM",
+                        url: window.location.href,
+                        reason: `Urgent Warning: You are about to purchase $${highestPrice.toFixed(2)} in gift cards. Scammers demand payment in gift cards. No legitimate company or government agency accepts gift cards as payment.`
+                    });
+                }
+            }
         }
     }, 2000); // Wait 2s for dynamic content to load
 
