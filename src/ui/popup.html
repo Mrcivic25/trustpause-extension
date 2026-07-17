@@ -27,35 +27,32 @@
         </div>
     </div>
 
-    <div class="settings-group">
-        <div class="setting-item">
-            <div class="setting-info">
-                <span class="setting-name">Protection Enabled</span>
-                <span class="setting-desc">Actively checking new websites</span>
+    <details class="compact-dropdown">
+        <summary>Protection Settings</summary>
+        <div class="settings-group" style="margin: 0 0 12px 0;">
+            <div class="setting-item">
+                <div class="setting-info">
+                    <span class="setting-name">Protection Enabled</span>
+                    <span class="setting-desc">Actively checking new websites</span>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="toggle-protection" aria-label="Toggle Protection" checked>
+                    <span class="slider round"></span>
+                </label>
             </div>
-            <label class="switch">
-                <input type="checkbox" id="toggle-protection" aria-label="Toggle Protection" checked>
-                <span class="slider round"></span>
-            </label>
         </div>
-    </div>
 
-    <div class="stats-card">
-        <div class="stat-value" id="threats-blocked">0</div>
-        <div class="stat-label">Threats Blocked</div>
-    </div>
-
-    <div class="actions" style="margin-top: 16px;">
-        <button id="btn-report-page" class="btn-primary" aria-label="Report Current Page" style="margin-bottom: 8px;">Report Current Page</button>
-        <button id="btn-clear-allowlist" class="btn-secondary" aria-label="Clear Allowlist">Clear Allowlist</button>
-    </div>
+        <div class="actions" style="padding: 0;">
+            <button id="btn-report-page" class="btn-primary" aria-label="Report Current Page" style="margin-bottom: 8px;">Report Current Page</button>
+            <button id="btn-clear-allowlist" class="btn-secondary" aria-label="Clear Allowlist">Clear Allowlist</button>
+        </div>
+    </details>
 
     <!-- Phase 3: Pairing UI -->
-    <div class="pairing-section">
-        <hr class="divider">
-        <h3 class="section-title">Family Dashboard</h3>
-        
-        <div id="paired-state" style="display: none;" class="paired-box">
+    <details class="compact-dropdown">
+        <summary>Family Dashboard Setup</summary>
+        <div class="pairing-section" style="padding: 0;">
+            <div id="paired-state" style="display: none; flex-direction: column;" class="paired-box">
             <span class="paired-icon" style="display: block; margin-bottom: 8px;">✓ Linked to Caretaker</span>
             <button id="btn-unbind" class="btn-secondary" style="background-color: #FEF2F2; color: #DC2626; border-color: #FCA5A5; font-size: 12px; padding: 6px;">Unbind Caretaker</button>
             <div id="unbind-confirm-state" style="display: none; flex-direction: column; gap: 8px; margin-top: 8px;">
@@ -74,12 +71,18 @@
                 <input type="password" id="pairing-password" aria-label="Pairing Password" placeholder="12-character Password" maxlength="12" style="padding: 8px; border: 1px solid #CBD5E1; border-radius: 6px;">
                 <button id="btn-pair" class="btn-primary" aria-label="Link to Dashboard">Link to Dashboard</button>
             </div>
-            <p id="pairing-error" class="error-text" style="display: none;">Invalid Code</p>
+                <p id="pairing-error" class="error-text" style="display: none;">Invalid Code</p>
+            </div>
         </div>
+    </details>
+
+    <div class="stats-card" style="margin-top: 16px;">
+        <div class="stat-value" id="threats-blocked">0</div>
+        <div class="stat-label">Threats Blocked</div>
     </div>
 
     <!-- Extra Links Section -->
-    <div class="extra-links" style="margin-top: 16px; display: flex; justify-content: space-between; font-size: 13px;">
+    <div class="extra-links" style="margin: 16px; display: flex; justify-content: space-between; font-size: 13px;">
         <a href="https://trustpause.app" target="_blank" aria-label="Visit TrustPause Website" style="color: #64748B; text-decoration: none;">Website</a>
         <a href="https://trustpause.app/dashboard" target="_blank" aria-label="Visit TrustPause Dashboard Settings" style="color: #64748B; text-decoration: none;">Dashboard Settings</a>
     </div>
