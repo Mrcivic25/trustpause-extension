@@ -57,7 +57,7 @@ async function sendHeartbeat() {
   }
 }
 
-async function sendAlertToDashboard(domain, reason) {
+async function sendAlertToDashboard(domain, reason, metadata = null) {
   const { caregiverId, pairingToken } = await chrome.storage.local.get(['caregiverId', 'pairingToken']);
   if (!caregiverId || !pairingToken) return;
 
@@ -65,7 +65,7 @@ async function sendAlertToDashboard(domain, reason) {
     await fetch(`${CONFIG.BACKEND_URL}/extension/alerts`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ caregiverId, token: pairingToken, domain, reason })
+      body: JSON.stringify({ caregiverId, token: pairingToken, domain, reason, metadata })
     });
   } catch (e) {
     console.error("Alert broadcast failed", e);
@@ -284,7 +284,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
         // Feature: Send to Caregiver Dashboard
         if (finalResult.status === 'BLOCK' || finalResult.status === 'WARN') {
-          await sendAlertToDashboard(domain, finalResult.reason);
+          await sendAlertToDashboard(domain, finalResult.reason, {
+            redirectChain: rChain.urls,
+            domainAgeDays: finalResult.domainAgeDays || null,
+            hasAdTracking: hasAdTracking,
+            matchedBrand: finalResult.matchedBrand || null
+          });
         }
       }
 
