@@ -1,6 +1,6 @@
 {
   "name": "trustpause-extension",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "TrustPause Browser Extension",
   "scripts": {
     "test": "vitest run"
